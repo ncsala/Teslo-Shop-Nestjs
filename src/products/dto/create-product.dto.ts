@@ -7,6 +7,7 @@ import {
   IsString,
   MinLength,
   IsIn,
+  IsLowercase,
 } from 'class-validator';
 
 export class CreateProductDto {
@@ -25,6 +26,7 @@ export class CreateProductDto {
 
   @IsString()
   @IsOptional()
+  @IsLowercase()
   slug?: string;
 
   @IsInt()
