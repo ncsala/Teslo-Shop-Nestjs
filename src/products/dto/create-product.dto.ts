@@ -8,6 +8,7 @@ import {
   MinLength,
   IsIn,
   IsLowercase,
+  IsUrl,
 } from 'class-validator';
 
 export class CreateProductDto {
@@ -46,4 +47,9 @@ export class CreateProductDto {
   @IsArray()
   @IsOptional()
   tags: string[];
+
+  @IsString({ each: true })
+  @IsArray()
+  @IsOptional()
+  images?: string[];
 }

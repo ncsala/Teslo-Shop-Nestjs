@@ -1,4 +1,12 @@
-import { BeforeInsert, BeforeUpdate, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BeforeInsert,
+  BeforeUpdate,
+  Column,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { ProductImage } from './product-image.entity';
 
 @Entity()
 export class Product {
@@ -45,11 +53,17 @@ export class Product {
 
   @Column('text', {
     array: true,
-    default: []
+    default: [],
   })
-  tags: string[]
+  tags: string[];
 
-  // Para realizar modificaciones en el campo slug 
+  @OneToMany(() => ProductImage, (productImage) => productImage.product, {
+    cascade: true,
+    eager: true,
+  })
+  images?: ProductImage[];
+
+  // Para realizar modificaciones en el campo slug
   // antes de insertar en la base de datos
   @BeforeInsert()
   checkSlugInsert() {
