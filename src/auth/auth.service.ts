@@ -3,20 +3,25 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { LoginUserDto, CreateUserDto } from './dto';
 import { User } from './entities/user.entity';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
+    private readonly jwtService: JwtService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -30,10 +35,47 @@ export class AuthService {
 
       await this.userRepository.save(user);
 
-      return userData;
+      return {
+        token: this.getJwtToken({ id: user.id }),
+        ...user,
+      };
     } catch (error) {
       this.handleDBErrors(error);
     }
+  }
+
+  async login(loginUserDto: LoginUserDto) {
+    const { password, email } = loginUserDto;
+
+    // const user = await this.userRepository.findOneBy({ email });
+    const user = await this.userRepository.findOne({
+      where: {
+        email,
+      },
+      select: {
+        email: true,
+        password: true,
+        id: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Usuario o contraseña incorrectos');
+    }
+
+    if (!bcrypt.compareSync(password, user.password)) {
+      throw new UnauthorizedException('Usuario o contraseña incorrectos');
+    }
+
+    return {
+      token: this.getJwtToken({ id: user.id }),
+      ...user,
+    };
+  }
+
+  private getJwtToken(payload: JwtPayload) {
+    const token = this.jwtService.sign(payload);
+    return token;
   }
 
   private handleDBErrors(error: any): never {
